@@ -52,11 +52,54 @@ rm(trainingSubjects,trainingValues,trainingActivity,
 
 ##TASK2 - Extracts only the measurements on the mean and standard deviation for each measurement.
 
-#Take only needed collum names
+#Take only needed column names
 TaskCollums<-grepl("subject|activity|mean|std", colnames(activity))
 
 #make new data
 activity<-activity[,TaskCollums]
 
 
-##TASK3
+##TASK3 - Uses descriptive activity names to name the activities in the data set
+#use previous made codebook for activities
+activity<-merge(activity,activities, by.x ="activity", by.y = "activity_id")
+activity<-mutate(activity, activity = NULL)
+activity<-arrange(activity,subject)
+
+#rename activity_labels into activity
+names(activity)[length(colnames(activity))]<-"activity"
+rm(activities)
+
+##TASK4 - Appropriately labels the data set with descriptive variable names
+
+#get column names
+ActivityCols<-colnames(activity)
+
+#remove special symbols
+ActivityCols<-gsub("[\\(\\)-]","",ActivityCols)
+
+#correct abbreviations
+ActivityCols<-gsub("^f","frequencyDomain",ActivityCols)
+ActivityCols<-gsub("^t","timeDomain",ActivityCols)
+ActivityCols<-gsub("Acc","Accelerometer",ActivityCols)
+ActivityCols<-gsub("Gyro","Gyroscope",ActivityCols)
+ActivityCols<-gsub("Mag","Magnitude",ActivityCols)
+ActivityCols<-gsub("Freq","Frequency",ActivityCols)
+ActivityCols<-gsub("mean","Mean",ActivityCols)
+ActivityCols<-gsub("std","StandardDeviation",ActivityCols)
+
+ActivityCols<-gsub("BodyBody", "Body", ActivityCols)
+
+#use this as new names
+colnames(activity)<-ActivityCols
+
+
+##Task5 - "From the data set in step 4, creates a second, 
+#independent tidy data set with the average of each variable for each activity and each subject."
+
+humanActivityMeans <- activity %>% 
+    group_by(subject, activity) %>%
+    summarise_each(funs(mean))
+
+##Output
+write.table(humanActivityMeans, "tidy_data.txt", row.names = FALSE, 
+            quote = FALSE)
